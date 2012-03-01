@@ -19,29 +19,14 @@
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
-#include <setjmp.h>
-#ifndef _WIN32
 #include <signal.h>
-#endif // !_WIN32
+#include <setjmp.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef _WIN32
-#include <windows.h>
-#endif // _WIN32
 #include <cmockery.h>
-
-#ifdef _WIN32
-#define vsnprintf _vsnprintf
-#endif // _WIN32
-
-/* Backwards compatibility with headers shipped with Visual Studio 2005 and
- * earlier. */
-#ifdef _WIN32
-WINBASEAPI BOOL WINAPI IsDebuggerPresent(VOID);
-#endif // _WIN32
 
 // Size of guard bytes around dynamically allocated blocks.
 #define MALLOC_GUARD_SIZE 16
@@ -215,7 +200,6 @@ static SourceLocation global_last_parameter_location;
 // List of all currently allocated blocks.
 static ListNode global_allocated_blocks;
 
-#ifndef _WIN32
 // Signals caught by exception_handler().
 static const int exception_signals[] = {
     SIGFPE,
@@ -229,43 +213,6 @@ static const int exception_signals[] = {
 typedef void (*SignalFunction)(int signal);
 static SignalFunction default_signal_functions[
     ARRAY_LENGTH(exception_signals)];
-
-#else // _WIN32
-
-// The default exception filter.
-static LPTOP_LEVEL_EXCEPTION_FILTER previous_exception_filter;
-
-// Fatal exceptions.
-typedef struct ExceptionCodeInfo {
-    DWORD code;
-    const char* description;
-} ExceptionCodeInfo;
-
-#define EXCEPTION_CODE_INFO(exception_code) {exception_code, #exception_code}
-
-static const ExceptionCodeInfo exception_codes[] = {
-    EXCEPTION_CODE_INFO(EXCEPTION_ACCESS_VIOLATION),
-    EXCEPTION_CODE_INFO(EXCEPTION_ARRAY_BOUNDS_EXCEEDED),
-    EXCEPTION_CODE_INFO(EXCEPTION_DATATYPE_MISALIGNMENT),
-    EXCEPTION_CODE_INFO(EXCEPTION_FLT_DENORMAL_OPERAND),
-    EXCEPTION_CODE_INFO(EXCEPTION_FLT_DIVIDE_BY_ZERO),
-    EXCEPTION_CODE_INFO(EXCEPTION_FLT_INEXACT_RESULT),
-    EXCEPTION_CODE_INFO(EXCEPTION_FLT_INVALID_OPERATION),
-    EXCEPTION_CODE_INFO(EXCEPTION_FLT_OVERFLOW),
-    EXCEPTION_CODE_INFO(EXCEPTION_FLT_STACK_CHECK),
-    EXCEPTION_CODE_INFO(EXCEPTION_FLT_UNDERFLOW),
-    EXCEPTION_CODE_INFO(EXCEPTION_GUARD_PAGE),
-    EXCEPTION_CODE_INFO(EXCEPTION_ILLEGAL_INSTRUCTION),
-    EXCEPTION_CODE_INFO(EXCEPTION_INT_DIVIDE_BY_ZERO),
-    EXCEPTION_CODE_INFO(EXCEPTION_INT_OVERFLOW),
-    EXCEPTION_CODE_INFO(EXCEPTION_INVALID_DISPOSITION),
-    EXCEPTION_CODE_INFO(EXCEPTION_INVALID_HANDLE),
-    EXCEPTION_CODE_INFO(EXCEPTION_IN_PAGE_ERROR),
-    EXCEPTION_CODE_INFO(EXCEPTION_NONCONTINUABLE_EXCEPTION),
-    EXCEPTION_CODE_INFO(EXCEPTION_PRIV_INSTRUCTION),
-    EXCEPTION_CODE_INFO(EXCEPTION_STACK_OVERFLOW),
-};
-#endif // !_WIN32
 
 
 // Exit the currently executing test.
@@ -1484,48 +1431,10 @@ void _fail(const char * const file, const int line) {
 }
 
 
-#ifndef _WIN32
 static void exception_handler(int sig) {
     print_error("%s\n", strsignal(sig));
     exit_test(1);
 }
-
-#else // _WIN32
-
-static LONG WINAPI exception_filter(EXCEPTION_POINTERS *exception_pointers) {
-    EXCEPTION_RECORD * const exception_record =
-        exception_pointers->ExceptionRecord;
-    const DWORD code = exception_record->ExceptionCode;
-    unsigned int i;
-    for (i = 0; i < ARRAY_LENGTH(exception_codes); i++) {
-        const ExceptionCodeInfo * const code_info = &exception_codes[i];
-        if (code == code_info->code) {
-            static int shown_debug_message = 0;
-            fflush(stdout);
-            print_error("%s occurred at 0x%08x.\n", code_info->description,
-                        exception_record->ExceptionAddress);
-            if (!shown_debug_message) {
-                print_error(
-                    "\n"
-                    "To debug in Visual Studio...\n"
-                    "1. Select menu item File->Open Project\n"
-                    "2. Change 'Files of type' to 'Executable Files'\n"
-                    "3. Open this executable.\n"
-                    "4. Select menu item Debug->Start\n"
-                    "\n"
-                    "Alternatively, set the environment variable \n"
-                    "UNIT_TESTING_DEBUG to 1 and rebuild this executable, \n"
-                    "then click 'Debug' in the popup dialog box.\n"
-                    "\n");
-                shown_debug_message = 1;
-            }
-            exit_test(0);
-            return EXCEPTION_EXECUTE_HANDLER;
-        }
-    }
-    return EXCEPTION_CONTINUE_SEARCH;
-}
-#endif // !_WIN32
 
 
 // Standard output and error print methods.
@@ -1533,9 +1442,6 @@ void vprint_message(const char* const format, va_list args) {
     char buffer[1024];
     vsnprintf(buffer, sizeof(buffer), format, args);
     printf(buffer);
-#ifdef _WIN32
-    OutputDebugString(buffer);
-#endif // _WIN32
 }
 
 
@@ -1543,9 +1449,6 @@ void vprint_error(const char* const format, va_list args) {
     char buffer[1024];
     vsnprintf(buffer, sizeof(buffer), format, args);
     fprintf(stderr, buffer);
-#ifdef _WIN32
-    OutputDebugString(buffer);
-#endif // _WIN32
 }
 
 
@@ -1574,24 +1477,16 @@ int _run_test(
     void *current_state = NULL;
     int rc = 1;
     int handle_exceptions = 1;
-#ifdef _WIN32
-    handle_exceptions = !IsDebuggerPresent();
-#endif // _WIN32
 #if UNIT_TESTING_DEBUG
     handle_exceptions = 0;
 #endif // UNIT_TESTING_DEBUG
 
     if (handle_exceptions) {
-#ifndef _WIN32
         unsigned int i;
         for (i = 0; i < ARRAY_LENGTH(exception_signals); i++) {
             default_signal_functions[i] = signal(
                 exception_signals[i], exception_handler);
         }
-#else // _WIN32
-        previous_exception_filter = SetUnhandledExceptionFilter(
-            exception_filter);
-#endif // !_WIN32
     }
 
     if (function_type == UNIT_TEST_FUNCTION_TYPE_TEST) {
@@ -1622,17 +1517,10 @@ int _run_test(
     teardown_testing(function_name);
 
     if (handle_exceptions) {
-#ifndef _WIN32
         unsigned int i;
         for (i = 0; i < ARRAY_LENGTH(exception_signals); i++) {
             signal(exception_signals[i], default_signal_functions[i]);
         }
-#else // _WIN32
-        if (previous_exception_filter) {
-            SetUnhandledExceptionFilter(previous_exception_filter);
-            previous_exception_filter = NULL;
-        }
-#endif // !_WIN32
     }
 
     return rc;
