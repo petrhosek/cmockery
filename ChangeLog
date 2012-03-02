@@ -1,3 +1,8 @@
+Fri Mar 02 11:35:00 2012 Petr Hosek <p.hosek@imperial.ac.uk>
+        * cmockery: version 0.15
+	* Dropped Windows support
+	* Updated Autoconf project build configuration
+
 Mon Sep 15 17:21:22 2008 Google Inc. <opensource@google.com>
 	* cmockery: version 0.12
 	* Made it possible to specify additional compiler, lib tool and link 
