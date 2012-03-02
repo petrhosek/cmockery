@@ -12373,6 +12373,18 @@ $as_echo "#define STDC_HEADERS 1" >>confdefs.h
 fi
 
 
+for ac_header in malloc.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "malloc.h" "ac_cv_header_malloc_h" "$ac_includes_default"
+if test "x$ac_cv_header_malloc_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_MALLOC_H 1
+_ACEOF
+
+fi
+
+done
+
 for ac_header in setjmp.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "setjmp.h" "ac_cv_header_setjmp_h" "$ac_includes_default"

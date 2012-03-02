@@ -72,8 +72,7 @@ DIST_COMMON = README $(am__configure_deps) $(dist_doc_DATA) \
 	$(top_srcdir)/configure $(top_srcdir)/lib/config.h.in AUTHORS \
 	COPYING ChangeLog INSTALL NEWS build-aux/compile \
 	build-aux/config.guess build-aux/config.sub build-aux/depcomp \
-	build-aux/install-sh build-aux/ltmain.sh build-aux/missing \
-	compile depcomp install-sh missing mkinstalldirs
+	build-aux/install-sh build-aux/ltmain.sh build-aux/missing
 TESTS = tests/calculator_test$(EXEEXT) \
 	tests/allocate_module_test$(EXEEXT) \
 	tests/assert_macro_test$(EXEEXT) \
