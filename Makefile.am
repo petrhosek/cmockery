@@ -1,109 +1,86 @@
-## This is a boilerplate file for Google opensource projects.
-## To make it useful, replace <<TEXT>> with actual text for your project.
-## Also, look at comments with "## double hashes" to see if any are worth
-## uncommenting or modifying.
+ACLOCAL_AMFLAGS = -I m4
+AM_CPPFLAGS = -I$(top_srcdir)/include
 
-## Process this file with automake to produce Makefile.in
+MAINTAINERCLEANFILES = \
+	Makefile.in
 
-# Make sure that when we re-make ./configure, we get the macros we need
-ACLOCAL_AMFLAGS = -I `pwd`/m4
+lib_LTLIBRARIES = libcmockery.la
+libcmockery_la_SOURCES = \
+	lib/config.h \
+	lib/cmockery.c
+libcmockery_la_LDFLAGS = -version-info 0:0:0
+pkginclude_HEADERS = \
+	include/cmockery.h
 
-# This is so we can #include <google/foo>
-AM_CPPFLAGS = -I$(top_srcdir)/src
+dist_doc_DATA = AUTHORS COPYING ChangeLog INSTALL NEWS README
 
-# These are good warnings to turn on by default
-if GCC
-AM_CXXFLAGS = -Wall -Wwrite-strings -Woverloaded-virtual -Wno-sign-compare
-endif
+include aminclude.am
 
-googleincludedir = $(includedir)/google
-## The .h files you want to install (that is, .h files that people
-## who install this package can include in their own applications.)
-googleinclude_HEADERS = src/google/cmockery.h
-
-docdir = $(prefix)/share/doc/$(PACKAGE)-$(VERSION)
-## This is for HTML and other documentation you want to install.
-## Add your documentation files (in doc/) in addition to these
-## top-level boilerplate files.  Also add a TODO file if you have one.
-dist_doc_DATA = AUTHORS COPYING ChangeLog INSTALL NEWS README doc/index.html
-
-## The libraries (.so's) you want to install
-lib_LTLIBRARIES =
-
-## unittests you want to run when people type 'make check'.
-## TESTS is for binary unittests, check_SCRIPTS for script-based unittests.
-## TESTS_ENVIRONMENT sets environment variables for when you run unittest,
-## but it only seems to take effect for *binary* unittests (argh!)
 TESTS =
-TESTS_ENVIRONMENT = CMOCKERY_ROOTDIR = $(top_srcdir)
+XFAIL_TESTS =
+TESTS_ENVIRONMENT = \
+	TEST_SOURCE_DIR=$(srcdir)/tests \
+	TEST_BUILD_DIR=$(top_builddir)/tests
+
+check_PROGRAMS =
 check_SCRIPTS =
-# Every time you add a unittest to check_SCRIPTS, add it here too
-noinst_SCRIPTS =
 
+unit_test_CPPFLAGS = -I$(top_srcdir)/tests -DUNIT_TESTING=1
 
-## vvvv RULES TO MAKE THE LIBRARIES, BINARIES, AND UNITTESTS
+TESTS += tests/calculator_test
+check_PROGRAMS += tests/calculator_test
+tests_calculator_test_SOURCES = \
+	tests/calculator_test.c \
+	tests/calculator.c
+tests_calculator_test_CFLAGS = $(unit_test_CPPFLAGS)
+tests_calculator_test_LDADD = $(top_builddir)/libcmockery.la
 
-lib_LTLIBRARIES += libcmockery.la
-libcmockery_la_SOURCES = src/config.h src/cmockery.c src/google/cmockery.h
-libcmockery_la_CFLAGS = -I$(top_srcdir)/src/google
+TESTS += tests/allocate_module_test
+XFAIL_TESTS += tests/allocate_module_test
+check_PROGRAMS += tests/allocate_module_test
+tests_allocate_module_test_SOURCES = \
+	tests/allocate_module_test.c \
+        tests/allocate_module.c
+tests_allocate_module_test_CFLAGS = $(unit_test_CPPFLAGS)
+tests_allocate_module_test_LDADD = $(top_builddir)/libcmockery.la
 
-noinst_PROGRAMS = calculator
-calculator_SOURCES = src/example/calculator.c src/config.h
-calculator_CFLAGS =
+TESTS += tests/assert_macro_test
+XFAIL_TESTS += tests/assert_macro_test
+check_PROGRAMS += tests/assert_macro_test
+tests_assert_macro_test_SOURCES = \
+	tests/assert_macro_test.c \
+        tests/assert_macro.c
+tests_assert_macro_test_CFLAGS = $(unit_test_CPPFLAGS)
+tests_assert_macro_test_LDADD = $(top_builddir)/libcmockery.la
 
-unit_test_CFLAGS = -I$(top_srcdir)/src/google \
-                   -I$(top_srcdir)/src/example -DUNIT_TESTING=1
+TESTS += tests/customer_database_test
+XFAIL_TESTS += tests/customer_database_test
+check_PROGRAMS += tests/customer_database_test
+tests_customer_database_test_SOURCES = \
+	tests/customer_database_test.c \
+        tests/customer_database.c \
+        tests/database.h
+tests_customer_database_test_CFLAGS = $(unit_test_CPPFLAGS)
+tests_customer_database_test_LDADD = $(top_builddir)/libcmockery.la
 
-noinst_PROGRAMS += calculator_test
-calculator_test_SOURCES = src/example/calculator_test.c \
-                          $(calculator_SOURCES)
-calculator_test_CFLAGS = $(unit_test_CFLAGS)
-calculator_test_LDADD = libcmockery.la
+TESTS += tests/key_value_test
+check_PROGRAMS += tests/key_value_test
+tests_key_value_test_SOURCES = \
+	tests/key_value_test.c \
+        tests/key_value.c
+tests_key_value_test_CFLAGS = $(unit_test_CPPFLAGS)
+tests_key_value_test_LDADD = $(top_builddir)/libcmockery.la
 
-noinst_PROGRAMS += allocate_module_test
-allocate_module_test_SOURCES = src/example/allocate_module_test.c \
-                               src/example/allocate_module.c
-allocate_module_test_CFLAGS = $(unit_test_CFLAGS)
-allocate_module_test_LDADD = libcmockery.la
-
-noinst_PROGRAMS += assert_macro_test
-assert_macro_test_SOURCES = src/example/assert_macro_test.c \
-                            src/example/assert_macro.c
-assert_macro_test_CFLAGS = $(unit_test_CFLAGS)
-assert_macro_test_LDADD = libcmockery.la
-
-noinst_PROGRAMS += customer_database_test
-customer_database_test_SOURCES = src/example/customer_database_test.c \
-                                 src/example/customer_database.c \
-                                 src/example/database.h
-customer_database_test_CFLAGS = $(unit_test_CFLAGS)
-customer_database_test_LDADD = libcmockery.la
-
-noinst_PROGRAMS += key_value_test
-key_value_test_SOURCES = src/example/key_value_test.c \
-                         src/example/key_value.c
-key_value_test_CFLAGS = $(unit_test_CFLAGS)
-key_value_test_LDADD = libcmockery.la
-
-noinst_PROGRAMS += product_database_test
-product_database_testdir = src/example
-product_database_test_SOURCES = src/example/product_database_test.c \
-                                src/example/product_database.c \
-                                src/example/database.h
-product_database_test_CFLAGS = $(unit_test_CFLAGS)
-product_database_test_LDADD = libcmockery.la
-
-noinst_PROGRAMS += run_tests
-run_tests_SOURCES = src/example/run_tests.c
-run_tests_CFLAGS = $(unit_test_CFLAGS)
-run_tests_LDADD = libcmockery.la
-
-## ^^^^ END OF RULES TO MAKE THE LIBRARIES, BINARIES, AND UNITTESTS
-
-
-## This should always include $(TESTS), but may also include other
-## binaries that you compile but don't want automatically installed.
-noinst_PROGRAMS += $(TESTS)
+TESTS += tests/product_database_test
+XFAIL_TESTS += tests/product_database_test
+check_PROGRAMS += tests/product_database_test
+tests_product_database_testdir = tests
+tests_product_database_test_SOURCES = \
+	tests/product_database_test.c \
+        tests/product_database.c \
+        tests/database.h
+tests_product_database_test_CFLAGS = $(unit_test_CPPFLAGS)
+tests_product_database_test_LDADD = $(top_builddir)/libcmockery.la
 
 rpm: dist-gzip packages/rpm.sh packages/rpm/rpm.spec
 	@cd packages && ./rpm.sh ${PACKAGE} ${VERSION}
@@ -111,8 +88,7 @@ rpm: dist-gzip packages/rpm.sh packages/rpm/rpm.spec
 deb: dist-gzip packages/deb.sh packages/deb/*
 	@cd packages && ./deb.sh ${PACKAGE} ${VERSION}
 
-## If you're using libtool, add 'libtool' here.  Also add this rule:
 libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status --recheck
-EXTRA_DIST = packages/rpm.sh packages/rpm/rpm.spec packages/deb.sh packages/deb \
-	libtool $(SCRIPTS)
+
+EXTRA_DIST = autogen.sh libtool packages/rpm.sh packages/rpm/rpm.spec packages/deb.sh packages/deb $(SCRIPTS)

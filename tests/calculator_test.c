@@ -19,11 +19,6 @@
 #include "cmockery.h"
 #include <stdio.h>
 
-#ifdef _WIN32
-// Compatibility with the Windows standard C library.
-#define vsnprintf _vsnprintf
-#endif // _WIN32
-
 #define array_length(x) (sizeof(x) / sizeof((x)[0]))
 
 /* To simplify this code, these functions and data structures could have been
