@@ -1,6 +1,7 @@
 		   README for cmockery library
 
-This is libase, simple template collection library.
+This is cmockery, lightweight library that is used to author C unit
+tests.
 
 There are README and NEWS files in most of the program sub-directories
 which give more information about those specific programs.
